@@ -524,6 +524,7 @@ public:
    void calc_face_list(void);
    void calc_face_list_wmap(void);
    void calc_face_list_wbidirmap(void);
+   void interpolate(int, int, int, int, real_t* (*)(int, int, int, int), MallocPlus&);
    void calc_face_list_wbidirmap_phantom(MallocPlus &state_memory);
    void calc_face_list_clearmaps(void);
 

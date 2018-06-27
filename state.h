@@ -324,7 +324,11 @@ public:
    
    void fill_circle(double circ_radius, double fill_value, double background);
    void state_reorder(vector<int> iorder);
-
+   void interpolate(int, int, int, int, double);
+   void interpolate_fine_x(int, int, int, int, double);
+   void interpolate_fine_y(int, int, int, int, double);
+   void interpolate_course_x(int, int, int, int, double);
+   void interpolate_course_y(int, int, int, int, double);
    void symmetry_check(const char *string, vector<int> sym_index, double eps, 
                        SIGN_RULE sign_rule, int &flag);
 

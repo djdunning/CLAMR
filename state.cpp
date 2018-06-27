@@ -3465,47 +3465,47 @@ void State::gpu_calc_finite_difference(double deltaT)
 }
 #endif
 
-void State:interpolate(int scheme, int index, int cell_lower, int cell_upper){
+void State::interpolate(int scheme, int index, int cell_lower, int cell_upper, double deltaT ){
 
    switch(scheme){
 
    case 0: // fince cell, x-direction, right cell more refined
-   interpolate_fine_x(0,index,cell_lower,cell_upper);
-   break
+   interpolate_fine_x(0,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 1: // fince cell, x-direction, left cell more refined
-   interpolate_fine_x(1,index,cell_lower,cell_upper);
-   break
+   interpolate_fine_x(1,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 2: // fince cell, y-direction, top cell more refined
-   interpolate_fine_y(0,index,cell_lower,cell_upper);
-   break
+   interpolate_fine_y(0,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 3: // fince cell, y-direction, bottom cell more refined
-   interpolate_fine_y(1,index,cell_lower,cell_upper);
-   break
+   interpolate_fine_y(1,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 4: // course cell, x-direction, right cell more refined
-   interpolate_course_x(0,index,cell_lower,cell_upper);
-   break
+   interpolate_course_x(0,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 5: // course cell, x-direction, left cell more refined
-   interpolate_course_x(1,index,cell_lower,cell_upper);
-   break
+   interpolate_course_x(1,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 6: // course cell, y-direction, top cell more refined
-   interpolate_course_y(0,index,cell_lower,cell_upper);
-   break
+   interpolate_course_y(0,index,cell_lower,cell_upper,deltaT);
+   break;
 
    case 7: // course cell, y-direction, bottom cell more refined
-   interpolate_course_x(1,index,cell_lower,cell_upper);
-   break
+   interpolate_course_x(1,index,cell_lower,cell_upper,deltaT);
+   break;
 
    } 
 
 }
 
-void State::interpolate_fine_x(int scheme, int index, int cell_lower, int cell_upper){
+void State::interpolate_fine_x(int scheme, int index, int cell_lower, int cell_upper, double deltaT){
    real_t dx_lower = mesh->lev_deltax[mesh->level[cell_lower]];
    real_t dx_upper = mesh->lev_deltax[mesh->level[cell_upper]];
    real_t FA_lower = dx_lower;
@@ -3515,18 +3515,21 @@ void State::interpolate_fine_x(int scheme, int index, int cell_lower, int cell_u
    real_t CV_lower = SQ(dx_lower);
    real_t CV_upper = SQ(dx_upper);
    real_t CV_lolim = CV_lower*min(HALF, CV_upper/CV_lower);
-   real_t CV_uplim = CV_upper*min(HALF, CV_lower/CV_upper)
+   real_t CV_uplim = CV_upper*min(HALF, CV_lower/CV_upper);
+   real_t g     = 9.80;   // gravitational constant
+   real_t ghalf = 0.5*g;
    switch(scheme){
       case 0: // H,U,V interpolation, right cell more refined
          H[index] = (2*(dx_lower*H[cell_upper]+dx_lower*H[cell_lower])/(dx_lower+dx_upper)
          - deltaT*((FA_uplim*HXFLUX(cell_upper)-FA_lolim*HXFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (HXFLUX(cell_upper)-HXFLUX(cell_lower))/dx_upper) - H[cell_upper]);
-         U[indes] = (2*(dx_lower*U[cell_upper]+dx_lower*U[cell_lower])/(dx_lower+dx_upper)
+         U[index] = (2*(dx_lower*U[cell_upper]+dx_lower*U[cell_lower])/(dx_lower+dx_upper)
          - deltaT*((FA_uplim*UXFLUX(cell_upper)-FA_lolim*UXFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (UXFLUX(cell_upper)-UXFLUX(cell_lower))/dx_upper) - U[cell_upper]);
          V[index] = (2*(dx_lower*V[cell_upper]+dx_lower*V[cell_lower])/(dx_lower+dx_upper)
          - deltaT*((FA_uplim*UVFLUX(cell_upper)-FA_lolim*UVFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper) - V[cell_upper]);
+      break;   
       case 1: // H,U,V interpolation, left cell more refined
          H[index] = (2*(dx_lower*H[cell_upper]+dx_lower*H[cell_lower])/(dx_lower+dx_upper)
          - deltaT*((FA_uplim*HXFLUX(cell_upper)-FA_lolim*HXFLUX(cell_lower))/(CV_uplim+CV_lolim)
@@ -3537,20 +3540,23 @@ void State::interpolate_fine_x(int scheme, int index, int cell_lower, int cell_u
          V[index] = (2*(dx_lower*V[cell_upper]+dx_lower*V[cell_lower])/(dx_lower+dx_upper)
          - deltaT*((FA_uplim*UVFLUX(cell_upper)-FA_lolim*UVFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper) - V[cell_lower]);
+      break;
    }
 }
 
-void State::interpolate_fine_y(int scheme, int index, int cell_lower, int cell_upper)
-   real_t dx_lower = mesh->lev_deltax[mesh->level[cell_lower]];
-   real_t dx_upper = mesh->lev_deltax[mesh->level[cell_upper]];
-   real_t FA_lower = dx_lower;
-   real_t FA_upper = dx_upper;
+void State::interpolate_fine_y(int scheme, int index, int cell_lower, int cell_upper, double deltaT ){
+   real_t dy_lower = mesh->lev_deltay[mesh->level[cell_lower]];
+   real_t dy_upper = mesh->lev_deltay[mesh->level[cell_upper]];
+   real_t FA_lower = dy_lower;
+   real_t FA_upper = dy_upper;
    real_t FA_lolim = FA_lower*min(ONE, FA_upper/FA_lower);
    real_t FA_uplim = FA_upper*min(ONE, FA_lower/FA_upper);
-   real_t CV_lower = SQ(dx_lower);
-   real_t CV_upper = SQ(dx_upper);
+   real_t CV_lower = SQ(dy_lower);
+   real_t CV_upper = SQ(dy_upper);
    real_t CV_lolim = CV_lower*min(HALF, CV_upper/CV_lower);
-   real_t CV_uplim = CV_upper*min(HALF, CV_lower/CV_upper)
+   real_t CV_uplim = CV_upper*min(HALF, CV_lower/CV_upper);
+   real_t g     = 9.80;   // gravitational constant
+   real_t ghalf = 0.5*g;
    switch(scheme){
       case 0: // H,U,V interpolation, top cell more refined 
          H[index] = (2*(dy_lower*H[cell_upper]+dy_lower*H[cell_lower])/(dy_lower+dy_upper)
@@ -3559,9 +3565,10 @@ void State::interpolate_fine_y(int scheme, int index, int cell_lower, int cell_u
          U[index] = (2*(dy_lower*U[cell_upper]+dy_lower*U[cell_lower])/(dy_lower+dy_upper)
          - deltaT*((FA_uplim*UVFLUX(cell_upper)-FA_lolim*UVFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (UVFLUX(cell_upper)-UVFLUX(cell_lower))/dy_upper) - U[cell_upper]);
-         v[index] = (2*(dy_lower*V[cell_upper]+dy_lower*V[cell_lower])/(dy_lower+dy_upper)
+         V[index] = (2*(dy_lower*V[cell_upper]+dy_lower*V[cell_lower])/(dy_lower+dy_upper)
          - deltaT*((FA_uplim*VYFLUX(cell_upper)-FA_lolim*VYFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (VYFLUX(cell_upper)-VYFLUX(cell_lower))/dy_upper) - V[cell_upper]);
+      break;
       case 1: // H,U,V interpolation, bottom cell more refined
          H[index] = (2*(dy_lower*H[cell_upper]+dy_lower*H[cell_lower])/(dy_lower+dy_upper)
          - deltaT*((FA_uplim*HYFLUX(cell_upper)-FA_lolim*HYFLUX(cell_lower))/(CV_uplim+CV_lolim)
@@ -3572,38 +3579,49 @@ void State::interpolate_fine_y(int scheme, int index, int cell_lower, int cell_u
          V[index] = (2*(dy_lower*V[cell_upper]+dy_lower*V[cell_lower])/(dy_lower+dy_upper)
          - deltaT*((FA_uplim*VYFLUX(cell_upper)-FA_lolim*VYFLUX(cell_lower))/(CV_uplim+CV_lolim)
          - (VYFLUX(cell_upper)-VYFLUX(cell_lower))/dy_upper) - V[cell_lower]);
+      break;
    }
 }
 
-void State::interpolate_course_x(int scheme, int index, int cell_lower, int cell_upper){
+void State::interpolate_course_x(int scheme, int index, int cell_lower, int cell_upper, double deltaT ){
+   int cell_course = (mesh->level[cell_upper] > mesh->level[cell_lower]) ? cell_lower : cell_upper;
    int face_bot = mesh->map_xcell2face_right1[cell_course];
    int face_top = mesh->map_xcell2face_left1[mesh->ntop[mesh->nrht[cell_course]]];
    real_t dx_upper = mesh->lev_deltax[mesh->level[cell_upper]];
+   real_t g     = 9.80;   // gravitational constant
+   real_t ghalf = 0.5*g;
    switch(scheme){
       case 0: // H,U,V interpolation, right cell more refined  
          H[index] = (2*(Hx[face_bot]+Hx[face_top]) + deltaT*(HXFLUX(cell_upper)-HXFLUX(cell_lower))/dx_upper - H[cell_upper]);
          U[index] = (2*(Ux[face_bot]+Hx[face_top]) + deltaT*(UXFLUX(cell_upper)-UXFLUX(cell_lower))/dx_upper - U[cell_upper]);
          V[index] = (2*(Vx[face_bot]+Hx[face_top]) + deltaT*(UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper - V[cell_upper]);
+      break;
       case 1: // H,U,V interpolation, left cell more refined  
          H[index] = (2*(Hx[face_bot]+Hx[face_top]) + deltaT*(HXFLUX(cell_upper)-HXFLUX(cell_lower))/dx_upper - H[cell_lower]);
          U[index] = (2*(Ux[face_bot]+Hx[face_top]) + deltaT*(UXFLUX(cell_upper)-UXFLUX(cell_lower))/dx_upper - U[cell_lower]);
-         V{index} = (2*(Vx[face_bot]+Hx[face_top]) + deltaT*(UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper - V[cell_lower]);
+         V[index] = (2*(Vx[face_bot]+Hx[face_top]) + deltaT*(UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper - V[cell_lower]);
+      break;
    }
 }
 
-void State::interpolate_course_y(int scheme, int index, int cell_lower, int cell_upper){
+void State::interpolate_course_y(int scheme, int index, int cell_lower, int cell_upper , double deltaT ){
+   int cell_course = (mesh->level[cell_upper] > mesh->level[cell_lower]) ? cell_lower : cell_upper;
    int face_bot = mesh->map_xcell2face_right1[cell_course];
    int face_top = mesh->map_xcell2face_left1[mesh->ntop[mesh->nrht[cell_course]]];
-   real_t dx_upper = mesh->lev_deltax[mesh->level[cell_upper]];
+   real_t dy_upper = mesh->lev_deltay[mesh->level[cell_upper]];
+   real_t g     = 9.80;   // gravitational constant
+   real_t ghalf = 0.5*g;
    switch(scheme){
       case 0: // H,U,V interpolation, top cell more refined  
          H[index] = (2*(Hy[face_bot]+Hy[face_top]) + deltaT*(HYFLUX(cell_upper)-HYFLUX(cell_lower))/dy_upper - H[cell_upper]);
          U[index] = (2*(Uy[face_bot]+Hy[face_top]) + deltaT*(UVFLUX(cell_upper)-UVFLUX(cell_lower))/dy_upper - U[cell_upper]);
          V[index] = (2*(Vy[face_bot]+Hy[face_top]) + deltaT*(VYFLUX(cell_upper)-VYFLUX(cell_lower))/dy_upper - V[cell_upper]);
+      break;
       case 1: // H,U,V interpolation, bottom cell more refined  
          H[index] = (2*(Hy[face_bot]+Hy[face_top]) + deltaT*(HYFLUX(cell_upper)-HYFLUX(cell_lower))/dy_upper - H[cell_lower]);
          U[index] = (2*(Uy[face_bot]+Hy[face_top]) + deltaT*(UVFLUX(cell_upper)-UVFLUX(cell_lower))/dy_upper - U[cell_lower]);
          V[index] = (2*(Vy[face_bot]+Hy[face_top]) + deltaT*(VYFLUX(cell_upper)-VYFLUX(cell_lower))/dy_upper - V[cell_lower]);
+      break;
    }
 }
 

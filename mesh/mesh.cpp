@@ -9585,7 +9585,7 @@ void Mesh::calc_face_list_wmap(void)
 
 }*/
 
-void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, real_t* (*interpolate_func)(int scheme, int index, int cell_lower, int cell_upper))
+void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, real_t* (*interpolate_func)(int scheme, int index, int cell_lower, int cell_upper), MallocPlus &state_memory_old)
 {
    //interpolate via external function if provided
    if (interpolate_func != NULL){
@@ -9593,133 +9593,136 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
          return;
    }
    //printf("ERROR - Invalid interpolation function pointer. Using default scheme\n")
+   malloc_plus_memory_entry *memory_item;
+   int cell_course, cell_fine, cell_bottom, cell_top, cell_left, cell_right;
+   real_t state_bot, state_top, state_lft, state_rht, state_avg;
+   real_t state_botbot, state_bottop, state_topbot, state_toptop; 
+   real_t state_lftlft, state_lftrht, state_rhtlft, state_rhtrht;
+   real_t state_sideavg = 0; 
+
    switch(scheme){
 
       case 0: // fine cell, x-direction, right cell more refined 
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_lower; // course neighbor to the face
-      int cell_fine =  cell_upper; // fine neighbor to the face
-      int cell_bottom = nrht[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
+      cell_course = cell_lower; // course neighbor to the face
+      cell_fine =  cell_upper; // fine neighbor to the face
+      cell_bottom = nrht[cell_course]; // bottom of the two fine neighbors of the course
+      cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
  
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
  
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
  
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
  
           mem_ptr_double[index] = mem_ptr_double[cell_course]; // left
           if (level[nlft[cell_course]] <= level[cell_course]){ // 2 cells over is same or lesser refine.
-              mem_ptr_double[index+1] = mem_ptr_double[nlft[cell_course]]; // left left
+             mem_ptr_double[index+1] = mem_ptr_double[nlft[cell_course]]; // left left
           }
           else {
-              mem_ptr_double[index+1] = mem_ptr_double[ntop[nlft[cell_course]]]; // left left
+             mem_ptr_double[index+1] = mem_ptr_double[ntop[nlft[cell_course]]]; // left left
           }
       }
       break;
  
       case 1: // fince cell, x-direction, left cell more refined
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_upper; // course neighbor to the face
-      int cell_fine =  cell_lower; // fine neighbor to the face
-      int cell_bottom = nlft[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
+      cell_course = cell_upper; // course neighbor to the face
+      cell_fine =  cell_lower; // fine neighbor to the face
+      cell_bottom = nlft[cell_course]; // bottom of the two fine neighbors of the course
+      cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
  
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
  
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
  
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
  
           mem_ptr_double[index+2] = mem_ptr_double[cell_course]; // right
           if (level[nrht[cell_course]] <= level[cell_course]){ // 2 cells over is same or lesser refine.
-              mem_ptr_double[index+3] = mem_ptr_double[nrht[cell_course]]; // right right
+             mem_ptr_double[index+3] = mem_ptr_double[nrht[cell_course]]; // right right
           }
           else {
-              mem_ptr_double[index+3] = mem_ptr_double[ntop[nrht[cell_course]]]; // right right
+             mem_ptr_double[index+3] = mem_ptr_double[ntop[nrht[cell_course]]]; // right right
           }
       }
       break;
  
       case 2: // fince cell, y-direction, top cell more refined
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_lower; // course neighbor to the face
-      int cell_fine = cell_upper; // fine neighbor to the face
-      int cell_left = ntop[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
+      cell_course = cell_lower; // course neighbor to the face
+      cell_fine = cell_upper; // fine neighbor to the face
+      cell_left = ntop[cell_course]; // bottom of the two fine neighbors of the course
+      cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
  
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
  
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
  
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
  
           mem_ptr_double[index] = mem_ptr_double[cell_course]; // bottom
           if (level[nbot[cell_course]] <= level[cell_course]){ // 2 cells over is same or lesser refine.
-              mem_ptr_double[index+1] = mem_ptr_double[nbot[cell_course]]; // bottom bottom
+             mem_ptr_double[index+1] = mem_ptr_double[nbot[cell_course]]; // bottom bottom
           }
           else {
-              mem_ptr_double[index+1] = mem_ptr_double[nrht[nbot[cell_course]]]; // bottom bottom
+             mem_ptr_double[index+1] = mem_ptr_double[nrht[nbot[cell_course]]]; // bottom bottom
           }
       }
       break;
  
       case 3: // fince cell, y-direction, bottom cell more refined
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_upper; // course neighbor to the face
-      int cell_fine = cell_lower; // fine neighbor to the face
-      int cell_left = nbot[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
- 
+      cell_course = cell_upper; // course neighbor to the face
+      cell_fine = cell_lower; // fine neighbor to the face
+      cell_left = nbot[cell_course]; // bottom of the two fine neighbors of the course
+      cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
+
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
- 
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
- 
+
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
+
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
- 
+
           mem_ptr_double[index+2] = mem_ptr_double[cell_course]; // top
           if (level[ntop[cell_course]] <= level[cell_course]){ // 2 cells over is same or lesser refine.
-              mem_ptr_double[index+3] = mem_ptr_double[ntop[cell_course]]; // top top
+             mem_ptr_double[index+3] = mem_ptr_double[ntop[cell_course]]; // top top
           }
           else {
-              mem_ptr_double[index+3] = mem_ptr_double[nrht[ntop[cell_course]]]; // top top
+             mem_ptr_double[index+3] = mem_ptr_double[nrht[ntop[cell_course]]]; // top top
           }
       }
       break;
  
       case 4: // course cell, x-direction, right cell more refined
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_lower; // course neighbor to the face
-      int cell_fine =  cell_upper; // fine neighbor to the face
-      int cell_bottom = nrht[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
-      int level_upper = level[cell_upper];
-      int level_lower = level[cell_lower];
- 
-      real_t state_botbot, state_bottop, state_topbot, state_toptop, state_sideavg = 0; //vars for 2 cells over
+      cell_course = cell_lower; // course neighbor to the face
+      cell_fine =  cell_upper; // fine neighbor to the face
+      cell_bottom = nrht[cell_course]; // bottom of the two fine neighbors of the course
+      cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
+
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
- 
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
- 
+
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
+
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
- 
-          real_t state_bot = mem_ptr_double[cell_bottom];
-          real_t state_top = mem_ptr_double[cell_top];
-          real_t state_coarse = mem_ptr_double[cell_course];
-          real_t state_avg = HALF * (state_bot + state_top);
+
+          state_bot = mem_ptr_double[cell_bottom];
+          state_top = mem_ptr_double[cell_top];
+          state_avg = HALF * (state_bot + state_top);
           mem_ptr_double[index+2] = state_avg; //right
-          //mem_ptr_double[index] = state_coarse; //left
- 
+          //mem_ptr_double[index] = mem_ptr_double[cell_course]; //left
+
           if (level[nrht[cell_bottom]] > level[cell_bottom]) { // rightbot right neighbor is even more refined
               state_botbot = mem_ptr_double[nrht[cell_bottom]];
               state_bottop = mem_ptr_double[ntop[nrht[cell_bottom]]];
@@ -9746,28 +9749,24 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
       case 5: // course cell, x-direction, left cell more refine
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_upper; // course neighbor to the face
-      int cell_fine =  cell_lower; // fine neighbor to the face
-      int cell_bottom = nlft[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
-      int level_upper = level[cell_upper];
-      int level_lower = level[cell_lower];
+      cell_course = cell_upper; // course neighbor to the face
+      cell_fine =  cell_lower; // fine neighbor to the face
+      cell_bottom = nlft[cell_course]; // bottom of the two fine neighbors of the course
+      cell_top = ntop[cell_bottom]; // top of the two fince neighbots of the course
  
-      real_t state_botbot, state_bottop, state_topbot, state_toptop, state_sideavg = 0; //vars for 2 cells over
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
  
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
  
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
  
-          real_t state_bot = mem_ptr_double[cell_bottom];
-          real_t state_top = mem_ptr_double[cell_top]];
-          real_t state_coarse = mem_ptr_double[cell_course];
-          real_t state_avg = HALF * (state_bot + state_top);
+          state_bot = mem_ptr_double[cell_bottom];
+          state_top = mem_ptr_double[cell_top];
+          state_avg = HALF * (state_bot + state_top);
           mem_ptr_double[index] = state_avg; //left
-          //m_ptr_double[index+2] = state_coarse; //right
+          //m_ptr_double[index+2] = mem_ptr_double[cell_course]; //right
  
           if (level[nlft[cell_bottom]] > level[cell_bottom]) { // leftbot left neighbor is even more refined
               state_botbot = mem_ptr_double[nlft[cell_bottom]];
@@ -9795,23 +9794,22 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
       case 6: // course cell, y-direction, top cell more refined 
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_lower; // course neighbor to the face
-      int cell_fine =  cell_upper; // fine neighbor to the face
-      int cell_left = ntop[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
+      cell_course = cell_lower; // course neighbor to the face
+      cell_fine =  cell_upper; // fine neighbor to the face
+      cell_left = ntop[cell_course]; // bottom of the two fine neighbors of the course
+      cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
  
-      real_t state_lftlft, state_lftrht, state_rhtlft, state_rhtrht, state_sideavg = 0; //vars for 2 cells over
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
  
-          if ( (memory_item->mem_flags & REZONE_DATA) == 0) continue;
+          if ((memory_item->mem_flags & REZONE_DATA) == 0) continue;
  
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
  
-          real_t state_lft = mem_ptr_double[cell_left];
-          real_t state_rht = mem_ptr_double[cell_right];
-          real_t state_avg = HALF * (state_lft + state_rht);
+          state_lft = mem_ptr_double[cell_left];
+          state_rht = mem_ptr_double[cell_right];
+          state_avg = HALF * (state_lft + state_rht);
           mem_ptr_double[index+2] = state_avg; // top
           //mem_ptr_double[index] = mem_ptr_double[cell_course]; // bottom
  
@@ -9837,16 +9835,15 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
           state_sideavg = 0;
       }
-      break
+      break;
  
       case 7: // course cell, y-direction, bottom cell more refined
       // loop through state arrays to update phantom cell state values
-      int cell_course = cell_upper; // course neighbor to the face
-      int cell_fine =  cell_lower; // fine neighbor to the face
-      int cell_left = nbot[cell_course]; // bottom of the two fine neighbors of the course
-      int cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
+      cell_course = cell_upper; // course neighbor to the face
+      cell_fine =  cell_lower; // fine neighbor to the face
+      cell_left = nbot[cell_course]; // bottom of the two fine neighbors of the course
+      cell_right = nrht[cell_bottom]; // top of the two fince neighbots of the course
  
-      real_t state_lftlft, state_lftrht, state_rhtlft, state_rhtrht, state_sideavg = 0; //vars for 2 cells over
       for (memory_item = state_memory_old.memory_entry_by_name_begin();
           memory_item != state_memory_old.memory_entry_by_name_end();
           memory_item = state_memory_old.memory_entry_by_name_next() ) {
@@ -9855,9 +9852,9 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
           double *mem_ptr_double = (double *)memory_item->mem_ptr;
  
-          real_t state_lft = mem_ptr_double[cell_left];
-          real_t state_rht = mem_ptr_double[cell_right];
-          real_t state_avg = HALF * (state_lft + state_rht);
+          state_lft = mem_ptr_double[cell_left];
+          state_rht = mem_ptr_double[cell_right];
+          state_avg = HALF * (state_lft + state_rht);
           mem_ptr_double[index] = state_avg; // bottom
           //mem_ptr_double[index+2] = mem_ptr_double[cell_course]; // top
  
@@ -9890,7 +9887,7 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
 
 }
 
-void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
+void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
 {
    map_xface2cell_lower.clear();
    map_xface2cell_upper.clear();
@@ -10216,8 +10213,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     xface_i[pfaceIdx] = i[lncell] + 1;
                     xface_j[pfaceIdx] = j[lncell];
 
-                    interpolate(0, pcellIdx, lncell, rncell, NULL);
-                    interpolate(4, pcellIdx, lncell, rncell, NULL);
+                    interpolate(0, pcellIdx, lncell, rncell, NULL, state_memory_old);
+                    interpolate(4, pcellIdx, lncell, rncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10284,8 +10281,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     xface_i[pfaceIdx] = i[rncell];
                     xface_j[pfaceIdx] = j[rncell];
 
-                    interpolate(1, pcellIdx, lncell, rncell, NULL);
-                    interpolate(5, pcellIdx, lncell, rncell, NULL);
+                    interpolate(1, pcellIdx, lncell, rncell, NULL, state_memory_old);
+                    interpolate(5, pcellIdx, lncell, rncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10370,7 +10367,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     level[pcellIdx] = level[rncell];
                     level[pcellIdx+1] = level[rncell];
 
-                    interpolate(0, pcellIdx, lncell, rncell, NULL);
+                    interpolate(0, pcellIdx, lncell, rncell, NULL, state_memory_old);
                     
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10409,7 +10406,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     level[pcellIdx] = level[lncell];
                     level[pcellIdx+1] = level[lncell];
 
-                    interpolate(1, pcellIdx, lncell, rncell, NULL);
+                    interpolate(1, pcellIdx, lncell, rncell, NULL, state_memory_old);
                     
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10522,9 +10519,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     yface_level[pfaceIdx] = level[bncell];
                     yface_i[pfaceIdx] = i[bncell];
                     yface_j[pfaceIdx] = j[bncell] + 1;
- 
-                    interpolate(2, pcellIdx, bncell, tncell, NULL);
-                    interpolate(6, pcellIdx, bncell, tncell, NULL);
+                    interpolate(2, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    interpolate(6, pcellIdx, bncell, tncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10584,8 +10580,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     yface_i[pfaceIdx] = i[tncell];
                     yface_j[pfaceIdx] = j[tncell];
 
-                    interpolate(3, pcellIdx, bncell, tncell, NULL);
-                    interpolate(7, pcellIdx, bncell, tncell, NULL);
+                    interpolate(3, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    interpolate(7, pcellIdx, bncell, tncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10669,7 +10665,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     level[pcellIdx] = level[tncell];
                     level[pcellIdx+1] = level[tncell];
 
-                    interpolate(3, pcellIdx, bncell, tncell, NULL);
+                    interpolate(3, pcellIdx, bncell, tncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10708,7 +10704,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
                     level[pcellIdx] = level[bncell];
                     level[pcellIdx+1] = level[bncell];
 
-                    interpolate(4, pcellIdx, bncell, tncell, NULL);
+                    interpolate(4, pcellIdx, bncell, tncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
