@@ -9971,7 +9971,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, real_T)
    for (int nz=0; nz<(int)ncells; nz++){
       int nl = nlft[nz];
       if (nl == nz) continue;
-0
+
       if (level[nl] < level[nz] && is_upper(j[nz])){
          map_xcell2face_left1[nz] = map_xcell2face_right2[nl];
       } else {
