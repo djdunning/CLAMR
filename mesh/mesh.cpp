@@ -9625,9 +9625,12 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
              mem_ptr_double[index+1] = mem_ptr_double[ntop[nlft[cell_course]]]; // left left
           }
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lftlft\n",index+1,cell_lower,cell_upper);
       break;
  
-      case 1: // fince cell, x-direction, left cell more refined
+      case 1: // fine cell, x-direction, left cell more refined
       // loop through state arrays to update phantom cell state values
       cell_course = cell_upper; // course neighbor to the face
       cell_fine =  cell_lower; // fine neighbor to the face
@@ -9650,9 +9653,12 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
              mem_ptr_double[index+3] = mem_ptr_double[ntop[nrht[cell_course]]]; // right right
           }
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: rht\n",index+2,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: rhtrht\n",index+3,cell_lower,cell_upper);
       break;
  
-      case 2: // fince cell, y-direction, top cell more refined
+      case 2: // fine cell, y-direction, top cell more refined
       // loop through state arrays to update phantom cell state values
       cell_course = cell_lower; // course neighbor to the face
       cell_fine = cell_upper; // fine neighbor to the face
@@ -9675,9 +9681,12 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
              mem_ptr_double[index+1] = mem_ptr_double[nrht[nbot[cell_course]]]; // bottom bottom
           }
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: bot\n",index,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: botbot\n",index+1,cell_lower,cell_upper);
       break;
  
-      case 3: // fince cell, y-direction, bottom cell more refined
+      case 3: // fine cell, y-direction, bottom cell more refined
       // loop through state arrays to update phantom cell state values
       cell_course = cell_upper; // course neighbor to the face
       cell_fine = cell_lower; // fine neighbor to the face
@@ -9700,6 +9709,9 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
              mem_ptr_double[index+3] = mem_ptr_double[nrht[ntop[cell_course]]]; // top top
           }
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: top\n",index+2,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: toptop\n",index+3,cell_lower,cell_upper);
       break;
  
       case 4: // course cell, x-direction, right cell more refined
@@ -9745,6 +9757,9 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
           state_sideavg = 0;
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: rht\n",index+2,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: rhtrht\n",index+3,cell_lower,cell_upper);
       break;
  
       case 5: // course cell, x-direction, left cell more refine
@@ -9790,6 +9805,9 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
           state_sideavg = 0;
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lftlft\n",index+1,cell_lower,cell_upper);
       break;
  
       case 6: // course cell, y-direction, top cell more refined 
@@ -9835,6 +9853,9 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
           state_sideavg = 0;
       }
+
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: top\n",index+2,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: toptop\n",index+3,cell_lower,cell_upper);
       break;
  
       case 7: // course cell, y-direction, bottom cell more refined
@@ -9880,10 +9901,12 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
  
           state_sideavg = 0;
       }
+
+      printf("DEBUG MESH: ID %d) LOWER: %d, UPPER: %d, POS: bot\n",index,cell_lower,cell_upper);
+      printf("DEBUG MESH: ID %d) LOWER: %d, UPPER: %d, POS: botbot \n",index+1,cell_lower,cell_upper);
       break;
 
    }
-
 
 }
 
@@ -10406,7 +10429,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx] = level[lncell];
                     level[pcellIdx+1] = level[lncell];
 
-                    interpolate(1, pcellIdx, lncell, rncell, NULL, state_memory_old);
+                    //XXX the index shift is a hack, fixme!
+                    interpolate(1, pcellIdx-2, lncell, rncell, NULL, state_memory_old);
                     
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10519,6 +10543,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     yface_level[pfaceIdx] = level[bncell];
                     yface_i[pfaceIdx] = i[bncell];
                     yface_j[pfaceIdx] = j[bncell] + 1;
+
                     interpolate(2, pcellIdx, bncell, tncell, NULL, state_memory_old);
                     interpolate(6, pcellIdx, bncell, tncell, NULL, state_memory_old);
 
@@ -10665,7 +10690,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx] = level[tncell];
                     level[pcellIdx+1] = level[tncell];
 
-                    interpolate(3, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    interpolate(2, pcellIdx, bncell, tncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10704,7 +10729,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx] = level[bncell];
                     level[pcellIdx+1] = level[bncell];
 
-                    interpolate(4, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    //XXX the index shift is a hack, fixme!
+                    interpolate(3, pcellIdx-2, bncell, tncell, NULL, state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values

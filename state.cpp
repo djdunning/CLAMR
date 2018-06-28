@@ -66,7 +66,7 @@
 #endif
 #include <omp.h>
 #undef DEBUG
-//#define DEBUG 0
+//#define DEBUG 3 
 #undef DEBUG_RESTORE_VALS
 #define TIMING_LEVEL 2
 
