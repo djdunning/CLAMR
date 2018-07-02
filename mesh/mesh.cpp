@@ -9585,13 +9585,16 @@ void Mesh::calc_face_list_wmap(void)
 
 }*/
 
-void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, real_t* (*interpolate_func)(int scheme, int index, int cell_lower, int cell_upper), MallocPlus &state_memory_old)
+void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory_old)
 {
    //interpolate via external function if provided
-   if (interpolate_func != NULL){
-         interpolate_func(scheme, index, cell_lower, cell_upper);
+/*
+     if (interp_obj != NULL){
+         interp_obj.interpolate(scheme, index, cell_lower, cell_upper, deltaT);
+         printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
          return;
-   }
+     } 
+*/
    //printf("ERROR - Invalid interpolation function pointer. Using default scheme\n")
    malloc_plus_memory_entry *memory_item;
    int cell_course, cell_fine, cell_bottom, cell_top, cell_left, cell_right;
@@ -9910,7 +9913,7 @@ void Mesh::interpolate(int scheme, int index, int cell_lower, int cell_upper, re
 
 }
 
-void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
+void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, double deltaT)
 {
    map_xface2cell_lower.clear();
    map_xface2cell_upper.clear();
@@ -10236,8 +10239,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     xface_i[pfaceIdx] = i[lncell] + 1;
                     xface_j[pfaceIdx] = j[lncell];
 
-                    interpolate(0, pcellIdx, lncell, rncell, NULL, state_memory_old);
-                    interpolate(4, pcellIdx, lncell, rncell, NULL, state_memory_old);
+                    interpolate(0, pcellIdx, lncell, rncell, deltaT,  state_memory_old);
+                    interpolate(4, pcellIdx, lncell, rncell, deltaT,  state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10304,8 +10307,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     xface_i[pfaceIdx] = i[rncell];
                     xface_j[pfaceIdx] = j[rncell];
 
-                    interpolate(1, pcellIdx, lncell, rncell, NULL, state_memory_old);
-                    interpolate(5, pcellIdx, lncell, rncell, NULL, state_memory_old);
+                    interpolate(1, pcellIdx, lncell, rncell, deltaT,  state_memory_old);
+                    interpolate(5, pcellIdx, lncell, rncell, deltaT,  state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10390,7 +10393,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx] = level[rncell];
                     level[pcellIdx+1] = level[rncell];
 
-                    interpolate(0, pcellIdx, lncell, rncell, NULL, state_memory_old);
+                    interpolate(0, pcellIdx, lncell, rncell, deltaT,  state_memory_old);
                     
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10430,7 +10433,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx+1] = level[lncell];
 
                     //XXX the index shift is a hack, fixme!
-                    interpolate(1, pcellIdx-2, lncell, rncell, NULL, state_memory_old);
+                    interpolate(1, pcellIdx-2, lncell, rncell, deltaT,  state_memory_old);
                     
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10544,8 +10547,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     yface_i[pfaceIdx] = i[bncell];
                     yface_j[pfaceIdx] = j[bncell] + 1;
 
-                    interpolate(2, pcellIdx, bncell, tncell, NULL, state_memory_old);
-                    interpolate(6, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    interpolate(2, pcellIdx, bncell, tncell, deltaT,  state_memory_old);
+                    interpolate(6, pcellIdx, bncell, tncell, deltaT,  state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10605,8 +10608,8 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     yface_i[pfaceIdx] = i[tncell];
                     yface_j[pfaceIdx] = j[tncell];
 
-                    interpolate(3, pcellIdx, bncell, tncell, NULL, state_memory_old);
-                    interpolate(7, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    interpolate(3, pcellIdx, bncell, tncell, deltaT,  state_memory_old);
+                    interpolate(7, pcellIdx, bncell, tncell, deltaT,  state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10690,7 +10693,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx] = level[tncell];
                     level[pcellIdx+1] = level[tncell];
 
-                    interpolate(2, pcellIdx, bncell, tncell, NULL, state_memory_old);
+                    interpolate(2, pcellIdx, bncell, tncell, deltaT,  state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
@@ -10730,7 +10733,7 @@ void Mesh::calc_face_list_wbidirmap_phantom(MallocPlus &state_memory)
                     level[pcellIdx+1] = level[bncell];
 
                     //XXX the index shift is a hack, fixme!
-                    interpolate(3, pcellIdx-2, bncell, tncell, NULL, state_memory_old);
+                    interpolate(3, pcellIdx-2, bncell, tncell, deltaT,  state_memory_old);
 
 /*
                     // loop through state arrays to update phantom cell state values
