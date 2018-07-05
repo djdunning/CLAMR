@@ -5172,28 +5172,31 @@ void State::print_rollback_log(int iteration, double simTime, double initial_mas
    }
 }
 
-class Mesh_CLAMR : Mesh{
-   
-   void interpolate(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
+//class Mesh_CLAMR : Mesh{
+  
+   Mesh_CLAMR::Mesh_CLAMR(int nx, int ny, int levmx_in, int ndim_in, double deltax_in, double deltay_in, int boundary, int parallel_in, int do_gpu_calc) : Mesh(nx,ny,levmx_in,ndim_in,deltax_in,deltay_in,boundary,parallel_in,do_gpu_calc){};
+
+ 
+   void Mesh_CLAMR::interpolate(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
       switch(scheme){
-         case 0: // fince cell, x-direction, right cell more refined
+         case 0: // fine cell, x-direction, right cell more refined
          interpolate_fine_x(0,index,cell_lower,cell_upper,deltaT,state_memory);
          break;
 
-         case 1: // fince cell, x-direction, left cell more refined
-         interpolate_fine_x(1,index,cell_lower,cell_upper,deltaT,state_memory);
+         case 1: // fine cell, x-direction, left cell more refined
+         interpolate_fine_x(1,index+2,cell_lower,cell_upper,deltaT,state_memory);
          break;
 
-         case 2: // fince cell, y-direction, top cell more refined
+         case 2: // fine cell, y-direction, top cell more refined
          interpolate_fine_y(0,index,cell_lower,cell_upper,deltaT,state_memory);
          break;
 
-         case 3: // fince cell, y-direction, bottom cell more refined
-         interpolate_fine_y(1,index,cell_lower,cell_upper,deltaT,state_memory);
+         case 3: // fine cell, y-direction, bottom cell more refined
+         interpolate_fine_y(1,index+2,cell_lower,cell_upper,deltaT,state_memory);
          break;
 
          case 4: // course cell, x-direction, right cell more refined
-         interpolate_course_x(0,index,cell_lower,cell_upper,deltaT,state_memory);
+         interpolate_course_x(0,index+2,cell_lower,cell_upper,deltaT,state_memory);
          break;
 
          case 5: // course cell, x-direction, left cell more refined
@@ -5201,7 +5204,7 @@ class Mesh_CLAMR : Mesh{
          break;
 
          case 6: // course cell, y-direction, top cell more refined
-         interpolate_course_y(0,index,cell_lower,cell_upper,deltaT,state_memory);
+         interpolate_course_y(0,index+2,cell_lower,cell_upper,deltaT,state_memory);
          break;
 
          case 7: // course cell, y-direction, bottom cell more refined
@@ -5210,7 +5213,7 @@ class Mesh_CLAMR : Mesh{
       } 
    }
 
-   void interpolate_fine_x(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
+   void Mesh_CLAMR::interpolate_fine_x(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
       state_t* H = (state_t *)state_memory.get_memory_ptr("H");
       state_t* U = (state_t *)state_memory.get_memory_ptr("U");
       state_t* V = (state_t *)state_memory.get_memory_ptr("V");
@@ -5251,9 +5254,11 @@ class Mesh_CLAMR : Mesh{
             - (UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper) - V[cell_lower]);
          break;
       }
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
+      printf("            H:  %f, U: %f, V: %f\n", H[index],U[index],V[index]);
    } 
 
-   void interpolate_fine_y(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
+   void Mesh_CLAMR::interpolate_fine_y(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
       state_t* H = (state_t *)state_memory.get_memory_ptr("H");
       state_t* U = (state_t *)state_memory.get_memory_ptr("U");
       state_t* V = (state_t *)state_memory.get_memory_ptr("V");
@@ -5294,9 +5299,11 @@ class Mesh_CLAMR : Mesh{
             - (VYFLUX(cell_upper)-VYFLUX(cell_lower))/dy_upper) - V[cell_lower]);
          break;
       }
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
+      printf("            H:  %f, U: %f, V: %f\n", H[index],U[index],V[index]);
    }
 
-   void interpolate_course_x(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
+   void Mesh_CLAMR::interpolate_course_x(int scheme, int index, int cell_lower, int cell_upper, double deltaT, MallocPlus &state_memory){
       state_t* H = (state_t *)state_memory.get_memory_ptr("H");
       state_t* U = (state_t *)state_memory.get_memory_ptr("U");
       state_t* V = (state_t *)state_memory.get_memory_ptr("V");
@@ -5408,9 +5415,11 @@ class Mesh_CLAMR : Mesh{
             V[index] = (2*(Vx_bot+Vx_top) + deltaT*(UVFLUX(cell_upper)-UVFLUX(cell_lower))/dx_upper_bot - V[cell_lower]);
          break;
       }
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
+      printf("            H:  %f, U: %f, V: %f\n", H[index],U[index],V[index]);
    }
 
-   void interpolate_course_y(int scheme, int index, int cell_lower, int cell_upper , double deltaT, MallocPlus &state_memory){
+   void Mesh_CLAMR::interpolate_course_y(int scheme, int index, int cell_lower, int cell_upper , double deltaT, MallocPlus &state_memory){
       state_t* H = (state_t *)state_memory.get_memory_ptr("H");
       state_t* U = (state_t *)state_memory.get_memory_ptr("U");
       state_t* V = (state_t *)state_memory.get_memory_ptr("V");
@@ -5523,6 +5532,8 @@ class Mesh_CLAMR : Mesh{
             V[index] = (2*(Vy_left+Vy_right) + deltaT*(VYFLUX(cell_upper)-VYFLUX(cell_lower))/dy_upper_left - V[cell_lower]);
          break;
       }
+      printf("DEBUG MESH: ID %d) LOWER:  %d, UPPER: %d, POS: lft\n",index,cell_lower,cell_upper);
+      printf("            H:  %f, U: %f, V: %f\n", H[index],U[index],V[index]);
    }
-};
+//};
 

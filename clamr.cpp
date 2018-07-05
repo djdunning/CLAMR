@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
 
    double deltax_in = 1.0;
    double deltay_in = 1.0;
-   mesh = new Mesh(nx, ny, levmx, ndim, deltax_in, deltay_in, boundary, parallel_in, do_gpu_calc);
+   mesh = new Mesh_CLAMR(nx, ny, levmx, ndim, deltax_in, deltay_in, boundary, parallel_in, do_gpu_calc);
    if (DEBUG) {
       //if (mype == 0) mesh->print();
 
