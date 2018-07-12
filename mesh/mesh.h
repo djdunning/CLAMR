@@ -130,8 +130,10 @@ typedef unsigned int uint;
 
 enum amr_method
 {
-    REGULAR_AMR,         // AMR done in physics level
-    FACE_IN_PLACE_AMR    // AMR done in mesh by extending face data structure
+    CELL_AMR,            // AMR done in physics level by cell
+    FACE_AMR,            // AMR done in physics level by face
+    FACE_IN_PLACE_AMR,   // AMR done in mesh by extending face data structure
+    REGULAR_CELL_AMR     // AMR done in mesh by creating regular grid
 };
 
 enum boundary
@@ -220,6 +222,12 @@ typedef mesh_device_types mesh_device_type;
 
 using namespace std;
 
+   struct mesh_type
+   {
+       double ***pstate;
+       int **mask;
+   };
+
 /****************************************************************//**
  * Mesh class
  *    Contains the cell-based adaptive mesh refinement
@@ -233,6 +241,8 @@ public:
 
    MallocPlus mesh_memory;
    MallocPlus gpu_mesh_memory;
+
+   struct mesh_type *meshes;
 
 #ifdef HAVE_OPENCL
    string defines;
@@ -351,7 +361,19 @@ public:
                   dev_nlft,       
                   dev_nrht,       
                   dev_nbot,       
-                  dev_ntop;       
+                  dev_ntop,
+                  dev_map_xface2cell_lower,
+                  dev_map_xface2cell_upper,
+                  dev_map_xcell2face_left1,
+                  dev_map_xcell2face_left2,
+                  dev_map_xcell2face_right1,
+                  dev_map_xcell2face_right2,
+                  dev_map_yface2cell_lower,
+                  dev_map_yface2cell_upper,
+                  dev_map_ycell2face_bot1,
+                  dev_map_ycell2face_bot2,
+                  dev_map_ycell2face_top1,
+                  dev_map_ycell2face_top2;
 
    cl_mem         dev_levdx,    // corresponds to lev_deltax
                   dev_levdy,    // corresponds to lev_deltay
@@ -373,6 +395,8 @@ public:
    vector<int> xface_level; // level of xfaces (max level of upper/lower cells)
    vector<int> map_xface2cell_lower; // IDs of lower cell (left for xface, bottom for yface)
    vector<int> map_xface2cell_upper; // IDs of upper cell (right for xface, top for yface)
+   vector<int> phantomXFlux;
+   vector<int> phantomYFlux;
 
    //Just like for cell neighbors, if the refinement increases across a face
    //this points to the left/bottom cell neighbor
@@ -523,9 +547,33 @@ public:
    //void calc_face_list_test(double *H);
    void calc_face_list(void);
    void calc_face_list_wmap(void);
+   void quickInterpolate(int side_main,              //x dim, bottom left/right neighbor || y dim, left top/bot neighbor
+                         int side_sec,               //x dim, top left/right neighbor || y dim, right top/bot neighbor
+                         int cncell,                 //coarse cell
+                         double* mem_ptr_double,     //memory item double pointer
+                         real_t d_lo,                //x dim, lev_deltax[level[left neigh]] || y dim, lev_deltay[level[bot..
+                         real_t d_hi,                //x dim, lev_deltax[level[right neigh]] || y dim, lev_deltay[level[top..
+                         int flag,                   //whether we are gettting a coarse from fine, fine from coarse, or both
+                         real_t *fineavg,            //pointer for a fine phantom value from coarse
+                         real_t *coarseavg);          //pointer for a coarse phantom value from fine
+   double xFakeFlux(double* locH,
+                  double* locU,
+                  double* locV,
+                  int     idx,
+                  int     caseNum);
+   
+   double yFakeFlux(double* locH,
+                  double* locU,
+                  double* locV,
+                  int     idx,
+                  int     caseNum);
+
    void calc_face_list_wbidirmap(void);
    virtual void interpolate(int, int, int, int, double, MallocPlus&);
    void calc_face_list_wbidirmap_phantom(MallocPlus &state_memory, double);
+   void calc_face_list_wbidirmap_phantom(MallocPlus &state_memory);
+   void generate_regular_cell_meshes(MallocPlus &state_memory);
+   void destroy_regular_cell_meshes(MallocPlus &state_memory);
    void calc_face_list_clearmaps(void);
 
    int **get_xface_flag(int lev, bool print_output=0);
@@ -549,6 +597,7 @@ public:
 #ifdef HAVE_OPENCL
    void gpu_calc_neighbors(void);
    void gpu_calc_neighbors_local(void);
+   void gpu_calc_face_list_wbidirmap(void);
 #endif
    //   TODO:  Not created yet; overloading for 3D mesh support. (davis68)
    void calc_neighbors(vector<int> &nlft,
